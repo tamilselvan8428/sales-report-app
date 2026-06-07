@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
+<title>SalesTrack Pro</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080e1a;--bg2:#0d1526;--card:#111d35;--card2:#162040;
+  --border:#1e2f52;--accent:#3b82f6;--accent2:#60a5fa;
+  --green:#10b981;--red:#ef4444;--orange:#f59e0b;--purple:#8b5cf6;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#475569;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden;}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:430px;margin:0 auto;position:relative;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+input,select{font-family:'DM Sans',sans-serif;background:var(--card2);border:1.5px solid var(--border);color:var(--text);border-radius:12px;padding:12px 16px;font-size:15px;width:100%;outline:none;transition:.2s;}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.15);}
+input::placeholder{color:var(--text3);}
+button{font-family:'DM Sans',sans-serif;cursor:pointer;border:none;outline:none;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes popIn{0%{transform:scale(.8);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+@keyframes slideIn{from{transform:translateX(-8px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,#0d1526,#111d35);border-bottom:1px solid var(--border);padding:48px 20px 0;flex-shrink:0;}
+.header-inner{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.header-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.header-date{color:var(--text2);font-size:12px;margin-top:2px;}
+.live-badge{display:flex;align-items:center;gap:6px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.25);border-radius:20px;padding:5px 12px;font-size:12px;color:#10b981;font-weight:600;}
+.live-dot{width:7px;height:7px;background:#10b981;border-radius:50%;animation:pulse 2s infinite;}
+.quick-bar{display:flex;align-items:center;padding:12px 0;}
+.quick-item{flex:1;text-align:center;}
+.quick-val{display:block;font-size:14px;font-weight:700;font-family:'Syne',sans-serif;}
+.quick-lbl{display:block;font-size:11px;color:var(--text3);margin-top:1px;}
+.quick-divider{width:1px;height:30px;background:var(--border);}
+.c-green{color:#10b981;}.c-orange{color:#f59e0b;}.c-blue{color:#60a5fa;}.c-red{color:#ef4444;}.c-purple{color:#8b5cf6;}
+
+/* BODY */
+.body{flex:1;overflow-y:auto;padding-bottom:20px;}
+.tab-pane{display:none;padding:16px;animation:fadeUp .3s ease;}
+.tab-pane.active{display:block;}
+.section-title{font-family:'Syne',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin:20px 0 10px;}
+.section-title:first-child{margin-top:4px;}
+
+/* STATS GRID */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;animation:fadeUp .4s ease both;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--sc);border-radius:3px 3px 0 0;}
+.stat-icon{font-size:20px;margin-bottom:8px;}
+.stat-value{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;}
+.stat-label{font-size:12px;color:var(--text3);margin-top:3px;}
+
+/* SAVINGS BANNER */
+.savings-banner{border-radius:16px;padding:20px;margin:12px 0;text-align:center;animation:fadeUp .4s ease;}
+.savings-banner.pos{background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(16,185,129,.05));border:1px solid rgba(16,185,129,.3);}
+.savings-banner.neg{background:linear-gradient(135deg,rgba(239,68,68,.15),rgba(239,68,68,.05));border:1px solid rgba(239,68,68,.3);}
+.sav-label{font-size:12px;color:var(--text2);margin-bottom:6px;}
+.sav-val{font-family:'Syne',sans-serif;font-size:30px;font-weight:800;}
+.sav-sub{font-size:13px;color:var(--text2);margin-top:6px;}
+
+/* CHART CARD */
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:12px;animation:fadeUp .4s ease;}
+.chart-title{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:14px;}
+.chart-legend{display:flex;gap:14px;justify-content:center;margin-top:10px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);}
+.legend-dot{width:10px;height:10px;border-radius:3px;}
+
+/* PIE WRAP */
+.pie-wrap{display:flex;align-items:center;gap:16px;}
+.pie-labels{display:flex;flex-direction:column;gap:10px;}
+.pie-label-item{font-size:13px;}
+.pie-label-name{color:var(--text2);font-size:11px;}
+.pie-label-val{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;}
+
+/* FORM CARD */
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;animation:fadeUp .3s ease;}
+.pay-toggle{display:flex;gap:8px;}
+.toggle-btn{flex:1;padding:12px;border-radius:12px;background:var(--card2);border:1.5px solid var(--border);color:var(--text2);font-size:14px;font-weight:600;transition:.2s;}
+.toggle-btn.active-cash{background:#10b981;border-color:#10b981;color:#fff;}
+.toggle-btn.active-upi{background:#8b5cf6;border-color:#8b5cf6;color:#fff;}
+.submit-btn{border-radius:12px;padding:14px;font-size:15px;font-weight:700;font-family:'Syne',sans-serif;transition:.15s;color:#fff;}
+.submit-btn:active{transform:scale(.97);}
+.btn-blue{background:linear-gradient(135deg,#3b82f6,#2563eb);box-shadow:0 4px 16px rgba(59,130,246,.35);}
+.btn-orange{background:linear-gradient(135deg,#f59e0b,#d97706);box-shadow:0 4px 16px rgba(245,158,11,.35);}
+.cat-grid{display:flex;flex-wrap:wrap;gap:6px;}
+.cat-btn{padding:7px 14px;border-radius:20px;background:var(--card2);border:1.5px solid var(--border);color:var(--text2);font-size:13px;font-weight:500;transition:.15s;}
+.cat-btn.active{background:rgba(245,158,11,.2);border-color:#f59e0b;color:#f59e0b;}
+
+/* MINI STATS */
+.mini-stats{display:flex;gap:10px;margin:12px 0;}
+.mini-stat{flex:1;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;border-left:3px solid var(--mc);}
+.mini-stat span{font-size:13px;color:var(--text2);}
+.mini-stat strong{font-size:15px;font-family:'Syne',sans-serif;}
+
+/* TOTAL BAR */
+.total-bar{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin:10px 0;font-size:14px;color:var(--text2);animation:fadeUp .3s ease;}
+.total-bar strong{font-family:'Syne',sans-serif;font-size:17px;color:#f59e0b;}
+
+/* LIST */
+.list{display:flex;flex-direction:column;gap:8px;}
+.list-item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px 14px;animation:slideIn .3s ease both;}
+.list-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.list-info{flex:1;min-width:0;}
+.list-desc{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-meta{font-size:12px;color:var(--text3);margin-top:2px;}
+.list-amount{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;flex-shrink:0;}
+.del-btn{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#ef4444;border-radius:8px;width:28px;height:28px;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;}
+.del-btn:active{background:rgba(239,68,68,.3);}
+
+/* EMPTY */
+.empty-state{text-align:center;color:var(--text3);font-size:14px;padding:28px;background:var(--card);border:1px dashed var(--border);border-radius:14px;animation:fadeUp .3s ease;}
+
+/* TOAST */
+#toast-container{position:fixed;top:60px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;width:90%;max-width:360px;pointer-events:none;}
+.toast{border-radius:12px;padding:12px 16px;font-size:14px;font-weight:500;animation:popIn .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.toast.success{background:#10b981;color:#fff;}
+.toast.error{background:#ef4444;color:#fff;}
+.toast.info{background:#3b82f6;color:#fff;}
+
+/* BOTTOM NAV */
+.bottom-nav{display:flex;background:var(--card);border-top:1px solid var(--border);padding:8px 0 24px;flex-shrink:0;}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;background:transparent;color:var(--text3);position:relative;transition:color .2s;}
+.nav-btn.active{color:var(--accent2);}
+.nav-icon{font-size:20px;transition:transform .2s;}
+.nav-btn.active .nav-icon{transform:scale(1.15);}
+.nav-label{font-size:11px;font-weight:600;}
+.nav-bar{position:absolute;top:-1px;width:32px;height:3px;background:var(--accent2);border-radius:0 0 4px 4px;animation:popIn .2s ease;display:none;}
+.nav-btn.active .nav-bar{display:block;}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-inner">
+      <div>
+        <div class="header-title">SalesTrack</div>
+        <div class="header-date" id="hdr-date"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="live-badge"><div class="live-dot"></div>Live</div>
+        <button onclick="logout()" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#ef4444;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;">Logout</button>
+      </div>
+    </div>
+    <div class="quick-bar">
+      <div class="quick-item"><span class="quick-val c-green" id="q-sales">₹0</span><span class="quick-lbl">Sales</span></div>
+      <div class="quick-divider"></div>
+      <div class="quick-item"><span class="quick-val c-orange" id="q-exp">₹0</span><span class="quick-lbl">Expenses</span></div>
+      <div class="quick-divider"></div>
+      <div class="quick-item"><span class="quick-val" id="q-save">₹0</span><span class="quick-lbl">Savings</span></div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+    <!-- LOGIN SCREEN -->
+    <div class="tab-pane active" id="tab-login" style="display:none;">
+      <div class="form-card" style="max-width:320px;margin:40px auto;">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="font-size:40px;margin-bottom:10px;">📊</div>
+          <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SalesTrack</div>
+          <div style="color:var(--text2);font-size:13px;margin-top:5px;">Sign in to continue</div>
+        </div>
+        <input type="email" id="login-email" placeholder="Email"/>
+        <input type="password" id="login-password" placeholder="Password"/>
+        <button class="submit-btn btn-blue" onclick="handleLogin()">Sign In</button>
+        <div style="text-align:center;margin-top:15px;font-size:13px;color:var(--text2);">
+          Don't have an account? <a href="#" onclick="showRegister()" style="color:var(--accent2);">Register</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- REGISTER SCREEN -->
+    <div class="tab-pane" id="tab-register" style="display:none;">
+      <div class="form-card" style="max-width:320px;margin:40px auto;">
+        <div style="text-align:center;margin-bottom:20px;">
+          <div style="font-size:40px;margin-bottom:10px;">📊</div>
+          <div style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;background:linear-gradient(90deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">SalesTrack</div>
+          <div style="color:var(--text2);font-size:13px;margin-top:5px;">Create account</div>
+        </div>
+        <input type="text" id="reg-name" placeholder="Your Name"/>
+        <input type="email" id="reg-email" placeholder="Email"/>
+        <input type="password" id="reg-password" placeholder="Password"/>
+        <button class="submit-btn btn-blue" onclick="handleRegister()">Create Account</button>
+        <div style="text-align:center;margin-top:15px;font-size:13px;color:var(--text2);">
+          Already have an account? <a href="#" onclick="showLogin()" style="color:var(--accent2);">Sign In</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="main-app" style="display:none;">
+    <!-- DASHBOARD TAB -->
+    <div class="tab-pane active" id="tab-dashboard">
+      <div class="section-title">Today's Overview</div>
+      <div class="stats-grid">
+        <div class="stat-card" style="--sc:#60a5fa;animation-delay:0ms"><div class="stat-icon">💰</div><div class="stat-value c-blue" id="st-total">₹0</div><div class="stat-label">Total Sales</div></div>
+        <div class="stat-card" style="--sc:#10b981;animation-delay:60ms"><div class="stat-icon">💵</div><div class="stat-value c-green" id="st-cash">₹0</div><div class="stat-label">Cash</div></div>
+        <div class="stat-card" style="--sc:#8b5cf6;animation-delay:120ms"><div class="stat-icon">📱</div><div class="stat-value c-purple" id="st-upi">₹0</div><div class="stat-label">UPI</div></div>
+        <div class="stat-card" style="--sc:#f59e0b;animation-delay:180ms"><div class="stat-icon">🧾</div><div class="stat-value c-orange" id="st-exp">₹0</div><div class="stat-label">Expenses</div></div>
+      </div>
+
+      <div class="savings-banner pos" id="sav-banner">
+        <div class="sav-label">Net Savings (Sales − Expenses)</div>
+        <div class="sav-val" id="sav-val">₹0</div>
+        <div class="sav-sub" id="sav-sub">🟢 Profit today!</div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Payment Split</div>
+        <div class="pie-wrap">
+          <canvas id="pie-chart" width="150" height="150" style="max-width:150px;flex-shrink:0;"></canvas>
+          <div class="pie-labels">
+            <div class="pie-label-item"><div class="pie-label-name">💵 Cash</div><div class="pie-label-val c-green" id="pie-cash">₹0</div></div>
+            <div class="pie-label-item"><div class="pie-label-name">📱 UPI</div><div class="pie-label-val c-purple" id="pie-upi">₹0</div></div>
+            <div class="pie-label-item"><div class="pie-label-name">🧾 Expenses</div><div class="pie-label-val c-orange" id="pie-exp">₹0</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Last 7 Days — Sales vs Expenses</div>
+        <canvas id="bar-chart" height="200"></canvas>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Sales</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Expenses</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Savings</div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-title">Sales Trend</div>
+        <canvas id="line-chart" height="160"></canvas>
+      </div>
+    </div>
+
+    <!-- SALES TAB -->
+    <div class="tab-pane" id="tab-sales">
+      <div class="section-title">Add Sale</div>
+      <div class="form-card">
+        <input type="number" id="sale-amount" placeholder="Amount (₹)" inputmode="numeric"/>
+        <div class="pay-toggle">
+          <button class="toggle-btn active-cash" id="btn-cash" onclick="selectPay('cash')">💵 Cash</button>
+          <button class="toggle-btn" id="btn-upi" onclick="selectPay('upi')">📱 UPI</button>
+        </div>
+        <input type="text" id="sale-desc" placeholder="Description (e.g. Good Day Biscuit)"/>
+        <button class="submit-btn btn-blue" onclick="addSale()">+ Add Sale</button>
+      </div>
+      <div class="mini-stats">
+        <div class="mini-stat" style="--mc:#10b981"><span>💵 Cash</span><strong class="c-green" id="ms-cash">₹0</strong></div>
+        <div class="mini-stat" style="--mc:#8b5cf6"><span>📱 UPI</span><strong class="c-purple" id="ms-upi">₹0</strong></div>
+      </div>
+      <div class="section-title">Today's Sales</div>
+      <div class="list" id="sales-list"><div class="empty-state">No sales recorded today</div></div>
+    </div>
+
+    <!-- EXPENSES TAB -->
+    <div class="tab-pane" id="tab-expenses">
+      <div class="section-title">Add Expenditure</div>
+      <div class="form-card">
+        <input type="text" id="exp-desc" placeholder="What did you spend on? (e.g. Good Day Biscuit 2000)"/>
+        <input type="number" id="exp-amount" placeholder="Amount (₹)" inputmode="numeric"/>
+        <div class="cat-grid" id="cat-grid"></div>
+        <button class="submit-btn btn-orange" onclick="addExp()">+ Add Expenditure</button>
+      </div>
+      <div class="total-bar"><span>Total Spent Today</span><strong id="exp-total">₹0</strong></div>
+      <div class="section-title">Today's Expenses</div>
+      <div class="list" id="exp-list"><div class="empty-state">No expenses recorded today</div></div>
+    </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-dashboard" onclick="switchTab('dashboard')">
+      <div class="nav-bar"></div><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span>
+    </button>
+    <button class="nav-btn" id="nav-sales" onclick="switchTab('sales')">
+      <div class="nav-bar"></div><span class="nav-icon">💰</span><span class="nav-label">Sales</span>
+    </button>
+    <button class="nav-btn" id="nav-expenses" onclick="switchTab('expenses')">
+      <div class="nav-bar"></div><span class="nav-icon">🧾</span><span class="nav-label">Expenses</span>
+    </button>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────
+const API_BASE = 'https://your-backend-url.onrender.com'; // Change to your cloud server URL when deployed
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+const CATS = ['Stock','Transport','Staff','Utilities','Marketing','Other'];
+let state = {
+  sales: [],
+  expenditures: [],
+  payType: 'cash',
+  selectedCat: 'Stock',
+  pieChart: null,
+  barChart: null,
+  lineChart: null,
+  token: localStorage.getItem('salestrack_token') || null,
+  user: JSON.parse(localStorage.getItem('salestrack_user') || 'null')
+};
+
+// ─── API HELPERS ─────────────────────────────────────────────────────────────
+async function apiCall(endpoint, method = 'GET', body = null) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+
+  const options = { method, headers };
+  if (body) options.body = JSON.stringify(body);
+
+  try {
+    const res = await fetch(`${API_BASE}${endpoint}`, options);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'API error');
+    return data;
+  } catch (e) {
+    console.error('API Error:', e);
+    throw e;
+  }
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────
+async function login(email, password) {
+  try {
+    const data = await apiCall('/api/auth/login', 'POST', { email, password });
+    state.token = data.token;
+    state.user = data.user;
+    localStorage.setItem('salestrack_token', data.token);
+    localStorage.setItem('salestrack_user', JSON.stringify(data.user));
+    return true;
+  } catch (e) {
+    toast(e.message, 'error');
+    return false;
+  }
+}
+
+async function register(email, password, name) {
+  try {
+    const data = await apiCall('/api/auth/register', 'POST', { email, password, name });
+    state.token = data.token;
+    state.user = data.user;
+    localStorage.setItem('salestrack_token', data.token);
+    localStorage.setItem('salestrack_user', JSON.stringify(data.user));
+    return true;
+  } catch (e) {
+    toast(e.message, 'error');
+    return false;
+  }
+}
+
+function logout() {
+  state.token = null;
+  state.user = null;
+  localStorage.removeItem('salestrack_token');
+  localStorage.removeItem('salestrack_user');
+  location.reload();
+}
+
+// ─── DATA FETCHING ─────────────────────────────────────────────────────────
+async function fetchSales() {
+  if (!state.token) return [];
+  const data = await apiCall('/api/sales');
+  return data;
+}
+
+async function fetchExpenditures() {
+  if (!state.token) return [];
+  const data = await apiCall('/api/expenditures');
+  return data;
+}
+
+async function fetchSummary(date) {
+  if (!state.token) return null;
+  const data = await apiCall(`/api/summary?date=${date}`);
+  return data;
+}
+
+async function fetchWeeklyChart() {
+  if (!state.token) return [];
+  const data = await apiCall('/api/chart/weekly');
+  return data;
+}
+function todayStr() {
+  return new Date().toISOString().split('T')[0];
+}
+function fmt(n) {
+  return '₹' + Number(n||0).toLocaleString('en-IN');
+}
+function timeStr(iso) {
+  return new Date(iso).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+function shortDate(d) {
+  const p = d.split('-'); return p[2]+'/'+p[1];
+}
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────
+function toast(msg, type='success') {
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 2800);
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  if (name === 'dashboard') refreshDashboard();
+}
+
+// ─── SALES ────────────────────────────────────────────────────────────────
+function selectPay(type) {
+  state.payType = type;
+  document.getElementById('btn-cash').className = 'toggle-btn' + (type==='cash'?' active-cash':'');
+  document.getElementById('btn-upi').className = 'toggle-btn' + (type==='upi'?' active-upi':'');
+}
+
+async function addSale() {
+  const amt = parseFloat(document.getElementById('sale-amount').value);
+  const desc = document.getElementById('sale-desc').value.trim();
+  if (!amt || amt <= 0) { toast('Enter a valid amount','error'); return; }
+  try {
+    await apiCall('/api/sales', 'POST', { amount: amt, paymentType: state.payType, description: desc||'Sale' });
+    document.getElementById('sale-amount').value = '';
+    document.getElementById('sale-desc').value = '';
+    await renderSalesList();
+    updateQuickBar();
+    toast('Sale added! 🎉');
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function deleteSale(id) {
+  try {
+    await apiCall(`/api/sales/${id}`, 'DELETE');
+    await renderSalesList();
+    updateQuickBar();
+    toast('Removed','info');
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function renderSalesList() {
+  const sales = await fetchSales();
+  const today = sales.filter(s => s.dateStr === todayStr()).reverse();
+  const cash = today.filter(s=>s.paymentType==='cash').reduce((a,s)=>a+s.amount,0);
+  const upi = today.filter(s=>s.paymentType==='upi').reduce((a,s)=>a+s.amount,0);
+  document.getElementById('ms-cash').textContent = fmt(cash);
+  document.getElementById('ms-upi').textContent = fmt(upi);
+  const list = document.getElementById('sales-list');
+  if (!today.length) { list.innerHTML = '<div class="empty-state">No sales recorded today</div>'; return; }
+  list.innerHTML = today.map((s,i) => `
+    <div class="list-item" style="animation-delay:${i*40}ms">
+      <div class="list-icon" style="background:${s.paymentType==='cash'?'rgba(16,185,129,.15)':'rgba(139,92,246,.15)'}">${s.paymentType==='cash'?'💵':'📱'}</div>
+      <div class="list-info">
+        <div class="list-desc">${s.description}</div>
+        <div class="list-meta">${s.paymentType.toUpperCase()} · ${timeStr(s.date)}</div>
+      </div>
+      <div class="list-amount c-green">${fmt(s.amount)}</div>
+      <button class="del-btn" onclick="deleteSale('${s._id}')">✕</button>
+    </div>`).join('');
+}
+
+// ─── EXPENDITURES ─────────────────────────────────────────────────────────
+function renderCatGrid() {
+  document.getElementById('cat-grid').innerHTML = CATS.map(c =>
+    `<button class="cat-btn${c===state.selectedCat?' active':''}" onclick="selectCat('${c}')">${c}</button>`
+  ).join('');
+}
+function selectCat(c) { state.selectedCat = c; renderCatGrid(); }
+
+async function addExp() {
+  const amt = parseFloat(document.getElementById('exp-amount').value);
+  const desc = document.getElementById('exp-desc').value.trim();
+  if (!desc) { toast('Enter a description','error'); return; }
+  if (!amt || amt <= 0) { toast('Enter a valid amount','error'); return; }
+  try {
+    await apiCall('/api/expenditures', 'POST', { amount: amt, description: desc, category: state.selectedCat });
+    document.getElementById('exp-amount').value = '';
+    document.getElementById('exp-desc').value = '';
+    await renderExpList();
+    updateQuickBar();
+    toast('Expenditure saved! 🧾');
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function deleteExp(id) {
+  try {
+    await apiCall(`/api/expenditures/${id}`, 'DELETE');
+    await renderExpList();
+    updateQuickBar();
+    toast('Removed','info');
+  } catch (e) {
+    toast(e.message, 'error');
+  }
+}
+
+async function renderExpList() {
+  const exps = await fetchExpenditures();
+  const today = exps.filter(e => e.dateStr === todayStr()).reverse();
+  const total = today.reduce((a,e)=>a+e.amount,0);
+  document.getElementById('exp-total').textContent = fmt(total);
+  const list = document.getElementById('exp-list');
+  if (!today.length) { list.innerHTML = '<div class="empty-state">No expenses recorded today</div>'; return; }
+  list.innerHTML = today.map((e,i) => `
+    <div class="list-item" style="animation-delay:${i*40}ms">
+      <div class="list-icon" style="background:rgba(245,158,11,.15)">🧾</div>
+      <div class="list-info">
+        <div class="list-desc">${e.description}</div>
+        <div class="list-meta">${e.category} · ${timeStr(e.date)}</div>
+      </div>
+      <div class="list-amount c-orange">${fmt(e.amount)}</div>
+      <button class="del-btn" onclick="deleteExp('${e._id}')">✕</button>
+    </div>`).join('');
+}
+
+// ─── QUICK BAR ────────────────────────────────────────────────────────────
+async function updateQuickBar() {
+  const [sales, exps] = await Promise.all([fetchSales(), fetchExpenditures()]);
+  const todaySales = sales.filter(s=>s.dateStr===todayStr());
+  const todayExps = exps.filter(e=>e.dateStr===todayStr());
+  const totalSales = todaySales.reduce((a,s)=>a+s.amount,0);
+  const totalExp = todayExps.reduce((a,e)=>a+e.amount,0);
+  const savings = totalSales - totalExp;
+  document.getElementById('q-sales').textContent = fmt(totalSales);
+  document.getElementById('q-exp').textContent = fmt(totalExp);
+  const qs = document.getElementById('q-save');
+  qs.textContent = fmt(savings);
+  qs.className = 'quick-val ' + (savings>=0?'c-green':'c-red');
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────
+async function refreshDashboard() {
+  const [sales, exps, summary, weeklyData] = await Promise.all([fetchSales(), fetchExpenditures(), fetchSummary(todayStr()), fetchWeeklyChart()]);
+  const today = todayStr();
+  const todaySales = sales.filter(s=>s.dateStr===today);
+  const todayExps = exps.filter(e=>e.dateStr===today);
+  const cashSales = todaySales.filter(s=>s.paymentType==='cash').reduce((a,s)=>a+s.amount,0);
+  const upiSales = todaySales.filter(s=>s.paymentType==='upi').reduce((a,s)=>a+s.amount,0);
+  const totalSales = cashSales + upiSales;
+  const totalExp = todayExps.reduce((a,e)=>a+e.amount,0);
+  const savings = totalSales - totalExp;
+
+  document.getElementById('st-total').textContent = fmt(totalSales);
+  document.getElementById('st-cash').textContent = fmt(cashSales);
+  document.getElementById('st-upi').textContent = fmt(upiSales);
+  document.getElementById('st-exp').textContent = fmt(totalExp);
+  document.getElementById('pie-cash').textContent = fmt(cashSales);
+  document.getElementById('pie-upi').textContent = fmt(upiSales);
+  document.getElementById('pie-exp').textContent = fmt(totalExp);
+
+  const banner = document.getElementById('sav-banner');
+  banner.className = 'savings-banner ' + (savings>=0?'pos':'neg');
+  document.getElementById('sav-val').textContent = fmt(savings);
+  document.getElementById('sav-val').className = 'sav-val ' + (savings>=0?'c-green':'c-red');
+  document.getElementById('sav-sub').textContent = savings>=0?'🟢 Profit today!':'🔴 Loss today';
+
+  // PIE CHART
+  const pieData = [cashSales, upiSales, totalExp];
+  const pieLabels = ['Cash','UPI','Expenses'];
+  const pieColors = ['#10b981','#8b5cf6','#f59e0b'];
+  if (state.pieChart) state.pieChart.destroy();
+  const pc = document.getElementById('pie-chart').getContext('2d');
+  state.pieChart = new Chart(pc, {
+    type: 'doughnut',
+    data: { labels: pieLabels, datasets: [{ data: pieData, backgroundColor: pieColors, borderWidth: 0, hoverOffset: 6 }] },
+    options: { plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => ' ' + fmt(ctx.raw) } } }, cutout: '60%', animation: { animateRotate: true, duration: 800 } }
+  });
+
+  // WEEKLY DATA
+  const wSales = weeklyData.map(d => d.sales);
+  const wExp = weeklyData.map(d => d.expenditure);
+  const wSav = weeklyData.map(d => d.savings);
+  const labels = weeklyData.map(d => shortDate(d.date));
+
+  const chartDefaults = {
+    plugins: { legend: { display: false }, tooltip: { backgroundColor: '#162040', borderColor: '#1e2f52', borderWidth: 1, titleColor: '#94a3b8', bodyColor: '#f1f5f9', callbacks: { label: (ctx) => ' ' + ctx.dataset.label + ': ' + fmt(ctx.raw) } } },
+    scales: {
+      x: { grid: { color: 'rgba(30,47,82,.5)' }, ticks: { color: '#94a3b8', font: { size: 11 } } },
+      y: { grid: { color: 'rgba(30,47,82,.5)' }, ticks: { color: '#94a3b8', font: { size: 10 }, callback: v => '₹'+v } }
+    }
+  };
+
+  if (state.barChart) state.barChart.destroy();
+  const bc = document.getElementById('bar-chart').getContext('2d');
+  state.barChart = new Chart(bc, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label:'Sales', data: wSales, backgroundColor: '#3b82f6', borderRadius: 6, borderSkipped: false },
+        { label:'Expenses', data: wExp, backgroundColor: '#f59e0b', borderRadius: 6, borderSkipped: false },
+        { label:'Savings', data: wSav, backgroundColor: '#10b981', borderRadius: 6, borderSkipped: false }
+      ]
+    },
+    options: { ...chartDefaults, animation: { duration: 800 } }
+  });
+
+  if (state.lineChart) state.lineChart.destroy();
+  const lc = document.getElementById('line-chart').getContext('2d');
+  state.lineChart = new Chart(lc, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label:'Sales', data: wSales, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,.1)', fill: true, tension: .4, pointBackgroundColor: '#3b82f6', pointRadius: 4 },
+        { label:'Savings', data: wSav, borderColor: '#10b981', borderDash: [5,3], fill: false, tension: .4, pointRadius: 0 }
+      ]
+    },
+    options: { ...chartDefaults, animation: { duration: 800 } }
+  });
+}
+
+// ─── AUTH UI ───────────────────────────────────────────────────────────────
+function showLogin() {
+  document.getElementById('tab-login').style.display = 'block';
+  document.getElementById('tab-register').style.display = 'none';
+  document.getElementById('main-app').style.display = 'none';
+}
+
+function showRegister() {
+  document.getElementById('tab-login').style.display = 'none';
+  document.getElementById('tab-register').style.display = 'block';
+  document.getElementById('main-app').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('tab-login').style.display = 'none';
+  document.getElementById('tab-register').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+}
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!email || !password) { toast('Please fill all fields','error'); return; }
+  const success = await login(email, password);
+  if (success) {
+    showApp();
+    await initApp();
+  }
+}
+
+async function handleRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  if (!name || !email || !password) { toast('Please fill all fields','error'); return; }
+  const success = await register(email, password, name);
+  if (success) {
+    showApp();
+    await initApp();
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+async function initApp() {
+  document.getElementById('hdr-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'short'});
+  renderCatGrid();
+  await renderSalesList();
+  await renderExpList();
+  await updateQuickBar();
+  await refreshDashboard();
+}
+
+// Check auth on load
+if (state.token) {
+  showApp();
+  initApp();
+} else {
+  showLogin();
+}
+</script>
+</body>
+</html>
